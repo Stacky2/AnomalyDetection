@@ -6,7 +6,10 @@ Created on Sun Jan 08 14:44:20 2017
 
 This file contains the functions that handles the hyper parameter optimization
 of the anomaly detection algorithms.
+
 """
+
+### load modules
 import ast
 import configparser
 import os
@@ -14,6 +17,7 @@ import sys
 import time
 
 from bayes_opt import BayesianOptimization
+
 
 ### define directories
 OptimizeParameters_dir  = os.path.dirname(__file__)
@@ -23,7 +27,6 @@ AnomalyModels_dir       = os.path.join(home_dir, "AnomalyModels")
 
 
 ### import own modules
-## import the AnomalyModel classes
 sys.path.insert(0, AnomalyModels_dir)
 from AnomalyModels import ( IF_AnomalyModel,   URF_AnomalyModel, 
                             UXGB_AnomalyModel, KMD_AnomalyModel, 
