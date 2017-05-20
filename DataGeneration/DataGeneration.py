@@ -5,6 +5,7 @@ Created on Wed Dec 21 11:57:15 2016
 @author: Mathias
 
 File that contains the functions for data generation.
+[NOTE: THIS PART OF THE PROGRAM IS STILL WORK IN PROGRES !!!]
 """
 
 import numpy as np
@@ -20,22 +21,21 @@ from operator import add
 from itertools import chain
 from sklearn import datasets
 
-from multiprocessing import Pool
 
 ### dataset config parser
 config = configparser.ConfigParser()
 config.read( os.path.join(os.path.dirname(__file__), "config.ini"))
 
 Iris_pars = config['Iris']
-FCT_pars = config['Forest Cover Type']
-CCF_pars = config['Credit Card Fraud']
+FCT_pars  = config['Forest Cover Type']
+CCF_pars  = config['Credit Card Fraud']
 
 
 ### define directories
-DataGeneration_dir  = os.path.dirname(__file__)
-home_dir                = os.path.normpath(DataGeneration_dir 
-                                           + os.sep + os.pardir)
-data_dir       = os.path.join(home_dir, "data")
+DataGeneration_dir = os.path.dirname(__file__)
+home_dir           = os.path.normpath(DataGeneration_dir 
+                                      + os.sep + os.pardir)
+data_dir           = os.path.join(home_dir, "data")
 
 ### data config parser
 config_data = configparser.ConfigParser()
@@ -48,7 +48,8 @@ config_data.read( os.path.join(data_dir, "config.ini"))
 ###############################################################################
 
 def GaussWeights(center, npoints, bw):
-    weights = [np.exp( - ( pt - center  )**2 / bw ) for pt in range(1,(npoints+1)) ]
+    weights = [ np.exp( - ( pt - center  )**2 / bw ) 
+                for pt in range(1,(npoints+1)) ]
     normalized_weights = [wght/sum(weights) for wght in weights]
     return normalized_weights;
     
@@ -58,7 +59,8 @@ def SmoothHistogram(hist, bw):
     smoothed_counts = np.repeat(np.nan, len(counts))
     
     for i in range(len(counts)):
-        smoothed_counts[i] = sum(GaussWeights(i+1, len(counts), bw=bw) * counts)
+        smoothed_counts[i] = sum(GaussWeights(i+1, 
+                                              len(counts), bw=bw) * counts)
 
     sm_hist = list(hist)
     sm_hist[0] = smoothed_counts
@@ -83,7 +85,9 @@ def gen_hist_samples(hists, n_samples_hist=-1, seed=1):
     
     ### for each feature generate samples according to the histograms
     for i in range(len(hists)):
-        counts = StratWeightedChoice( weights = hists[i][0]/float(np.sum(hists[i][0])), nsamples=n_samples_hist ) #hists[i][0] 
+        counts = StratWeightedChoice( 
+                    weights = hists[i][0]/float(np.sum(hists[i][0])), 
+                    nsamples=n_samples_hist ) #hists[i][0] 
         breaks = hists[i][1]
         
         samples = np.zeros(np.sum(counts)) # ev replace with empty
@@ -92,7 +96,8 @@ def gen_hist_samples(hists, n_samples_hist=-1, seed=1):
         
         ### generate samples for each bin in the histogram
         for j in range(len(counts)):
-            samples[temp:(temp+counts[j])] = np.random.uniform( low  = breaks[j], 
+            samples[temp:(temp+counts[j])] = np.random.uniform( 
+                                                   low  = breaks[j], 
                                                    high = breaks[j+1], 
                                                    size = counts[j] )
             temp += counts[j]
@@ -102,6 +107,7 @@ def gen_hist_samples(hists, n_samples_hist=-1, seed=1):
     return hist_samples;
 
 """
+
 def gen_hist_samples(hists, n_samples_hist=-1, seed=1): ### for MixedDataModel
     
     ### if number of samples per hist not given take number of points used to
@@ -148,7 +154,8 @@ def SmoothPercentile(hist):
     def generate_bin_samples(hist):
         counts = hist[0]
         breaks = hist[1]
-        midpts = breaks[0:(len(breaks)-1)] + ( breaks[1:len(breaks)] - breaks[0:(len(breaks)-1)]) /2
+        midpts = (breaks[0:(len(breaks)-1)] + ( breaks[1:len(breaks)] 
+                  - breaks[0:(len(breaks)-1)]) /2)
                                    
         samples = np.empty([0])
         for i in range(len(midpts)):
@@ -166,7 +173,8 @@ def SmoothPercentile(hist):
             return(iqr)
         
         hi = np.std(x)
-        lo = min(hi,IQR(x)/1.34) # if doesnt work look at R implementation of "bw.nrd0"
+        # if doesnt work look at R implementation of "bw.nrd0"
+        lo = min(hi,IQR(x)/1.34) 
         bw = 0.9 * lo * len(x)**(-0.2)
         return bw;
 
@@ -185,7 +193,7 @@ def SmoothPercentile(hist):
     
     def QKDE(p):
         
-        eps = 1e-5 ####################################################################################
+        eps = 1e-5 ############################################################
         p = max(min(p, 1-eps), eps)
         
         def tempf(t):
@@ -200,7 +208,7 @@ def SmoothPercentile(hist):
     sample = generate_bin_samples(hist)
     bw = bw(sample)
     size_bin = hist[1][1] - hist[1][0]
-    tail_size = 2 * size_bin ### MAKE ADJUSTABLE !!!! ######################################################################
+    tail_size = 2 * size_bin ### MAKE ADJUSTABLE !!!! #########################
     Interval = [min(hist[1])-tail_size , max(hist[1])+tail_size]
     
     ### Plot histogram and density
@@ -263,7 +271,8 @@ def StratWeightedChoice(weights, nsamples, seed=1):
     nsamples_modes =  [ int(nsamples*freq) for freq in weights]
     nsamples_left = nsamples - sum(nsamples_modes)
     np.random.seed(seed)
-    samples_left = list(chain( *np.random.multinomial( nsamples_left, weights, 1) ) )
+    samples_left = list(chain( *np.random.multinomial( nsamples_left, 
+                                                       weights, 1) ) )
     nsamples_modes = map( add, nsamples_modes, samples_left )
     
     return nsamples_modes;
@@ -276,8 +285,10 @@ def StratWeightedChoiceDict(weights, nsamples, seed=1):
     
     nsamples_left = nsamples - np.sum(nsamples_modes.values())
     np.random.seed(seed)
-    #samples_left = list(chain( *np.random.multinomial( nsamples_left, weights, 1) ) )
-    samples_left = np.random.choice(a=weights.keys(), size=nsamples_left, p=weights.values())
+    #samples_left = list(chain( *np.random.multinomial( nsamples_left, 
+    #                                                   weights, 1) ) )
+    samples_left = np.random.choice(a=weights.keys(), 
+                                    size=nsamples_left, p=weights.values())
     for sample in samples_left:
         nsamples_modes[sample] +=1
     
@@ -349,24 +360,25 @@ class DataModel:
                                         columns = range(len(self.hists[i])) )
             
             if method == 'histogram':
-                hist_samples = gen_hist_samples(self.hists[i], n_samples_hist = nsamples, seed=seed)
+                hist_samples = gen_hist_samples(self.hists[i], 
+                                                n_samples_hist = nsamples, 
+                                                seed            = seed)
                 for j in range(len(self.hists[i])):
-                    gen_samples_mode[j] = np.percentile(a=hist_samples[j], q=100*U[j])
+                    gen_samples_mode[j] = np.percentile(a=hist_samples[j], 
+                                                        q=100*U[j])
                     
             if method == 'smooth':
                 for j in range(len(self.hists[i])):
                     Percentile = SmoothPercentile(self.hists[i][j])
-                    print repr(min(U[j])) + ' ' + repr(max(U[j])) ### TESTING ONLY !!!!
-                    print repr( Percentile( 100* min(U[j])) ) + ' ' + repr( Percentile( 100* max(U[j])) ) ### TESTING ONLY !!!!
+                    print repr(min(U[j])) + ' ' + repr(max(U[j])) 
+                    print repr( Percentile( 100* min(U[j])) ) + ' ' 
+                                + repr( Percentile( 100* max(U[j])) ))
                     gen_samples_mode[j] = Percentile( 100*U[j] )
                     
             
             gen_samples = pd.concat([gen_samples, gen_samples_mode])
                         
             print 'end mode' + repr(i)
-            # print repr( gen_samples[ sum(nsamples_modes[:i]) : sum(nsamples_modes[:(i+1)]) ] )
-            # print repr( gen_samples_mode )
-            # print repr( sum(nsamples_modes[:i]) ) + ' '+ repr( sum(nsamples_modes[:(i+1)]) )
 
             
         gen_samples.index = range(gen_samples.shape[0])
@@ -391,28 +403,25 @@ class DataModel:
              
         for i in range(len(self.hists)):
             mean = np.repeat(0,len(self.hists[i]))
-            T = pd.DataFrame( np.random.multivariate_normal( mean = mean, 
-                                                             cov  = self.cor[i], 
-                                                             size = nsamples_modes[i]) )
+            T = pd.DataFrame( np.random.multivariate_normal( 
+                                mean = mean, 
+                                cov  = self.cor[i], 
+                                size = nsamples_modes[i]) )
             U = pd.DataFrame( norm.cdf(T) )
             
-            hist_samples = gen_hist_samples(self.hists[i], n_samples_hist = nsamples, seed=seed)
+            hist_samples = gen_hist_samples(self.hists[i], 
+                            n_samples_hist = nsamples, seed=seed)
             
             gen_samples_mode = pd.DataFrame( np.nan, 
                                         index   = range(nsamples_modes[i]), 
                                         columns = range(len(self.hists[i])) )
             for j in range(len(self.hists[i])):
-                gen_samples_mode[j] = np.percentile(a=hist_samples[j], q=100*U[j])
-            
-            # gen_samples[ sum(nsamples_modes[:i]) : sum(nsamples_modes[:(i+1)]) ] = gen_samples_mode
+                gen_samples_mode[j] = np.percentile(a=hist_samples[j], 
+                                                    q=100*U[j])
             
             gen_samples = pd.concat([gen_samples, gen_samples_mode])
                         
             print 'end mode' + repr(i)
-            # print repr( gen_samples[ sum(nsamples_modes[:i]) : sum(nsamples_modes[:(i+1)]) ] )
-            # print repr( gen_samples_mode )
-            # print repr( sum(nsamples_modes[:i]) ) + ' '+ repr( sum(nsamples_modes[:(i+1)]) )
-
             
         gen_samples.index = range(gen_samples.shape[0])
         return gen_samples;
@@ -453,7 +462,8 @@ class MixedDataModel:
                              pd.Categorical( data[col] ).categories.values ]
                 self.cat_cols[col] = new_cols
                 self.cats[col] = pd.Categorical( data[col] ).categories.values
-                self.probs[col] = pd.Categorical(data[col]).describe().freqs.to_dict()
+                self.probs[col] = pd.Categorical(
+                        data[col]).describe().freqs.to_dict()
             else:
                 self.num_cols.append(col)
         
@@ -468,16 +478,19 @@ class MixedDataModel:
         
         
         for cat in modes.categories:
-            self.cor[cat] = pd.DataFrame( np.corrcoef( data_dummy[modes==cat], rowvar=0 ) )
+            self.cor[cat] = pd.DataFrame( 
+                             np.corrcoef( data_dummy[modes==cat], rowvar=0 ) )
             
             self.cor[cat] = self.cor[cat].fillna(value=0.0)
-            self.empty_cols[cat] = self.dum_cols[self.cor[cat].isnull().all(1)]##########################################################
+            self.empty_cols[cat] = self.dum_cols[
+                                    self.cor[cat].isnull().all(1)]
     
             hists = {}
             for col in data_dummy:
                 
                 if col in self.num_cols:
-                    hist = np.histogram(data_dummy.loc[modes==cat,col], bins=nbins)
+                    hist = np.histogram(data_dummy.loc[modes==cat,col], 
+                                        bins=nbins)
                     if smooth_hists:
                         sm_hist = SmoothHistogram(hist, bw=bw)
                         hists[col] = sm_hist
@@ -504,31 +517,37 @@ class MixedDataModel:
              
         for key in self.cor.keys():
             mean = np.repeat(0,self.cor[key].shape[0])
-            T = pd.DataFrame( np.random.multivariate_normal( mean = mean, 
-                                                             cov  = self.cor[key], 
-                                                             size = nsamples_modes[key]) )
+            T = pd.DataFrame( np.random.multivariate_normal( 
+                                mean = mean, 
+                                cov  = self.cor[key], 
+                                size = nsamples_modes[key]) 
+                            )
             U = pd.DataFrame( norm.cdf(T) )
             U.columns = self.dum_cols
             
             gen_samples_mode_num = pd.DataFrame( np.nan, 
                                         index   = range(nsamples_modes[key]), 
-                                        columns = [] ) #range(self.cor[i].shape[0]) )
+                                        columns = [] ) 
             gen_samples_mode = pd.DataFrame( np.nan, 
                                         index   = range(nsamples_modes[key]), 
-                                        columns = [] ) #range(self.cor[i].shape[0]) )
+                                        columns = [] )
             
             print 'generate histogram samples...'
             if method == 'histogram':
-                hist_samples = gen_hist_samples(self.hists[key], n_samples_hist = nsamples, seed=seed)
+                hist_samples = gen_hist_samples(self.hists[key], 
+                                                n_samples_hist = nsamples, 
+                                                seed=seed)
                 for key2 in self.hists[key].keys() :
-                    gen_samples_mode_num[key2] = np.percentile(a=hist_samples[key2], q=100*U[key2])
+                    gen_samples_mode_num[key2] = np.percentile(
+                            a=hist_samples[key2], q=100*U[key2])
                     
             if method == 'smooth':
                 """
                 for j in range(len(self.hists[i])):
                     Percentile = SmoothPercentile(self.hists[i][j])
-                    print repr(min(U[j])) + ' ' + repr(max(U[j])) ### TESTING ONLY !!!!
-                    print repr( Percentile( 100* min(U[j])) ) + ' ' + repr( Percentile( 100* max(U[j])) ) ### TESTING ONLY !!!!
+                    print repr(min(U[j])) + ' ' + repr(max(U[j])) 
+                    print repr( Percentile( 100* min(U[j])) ) + ' ' 
+                                + repr( Percentile( 100* max(U[j])) )
                     gen_samples_mode[j] = Percentile( 100*U[j] )
                 """
             
@@ -542,15 +561,18 @@ class MixedDataModel:
                     
                     def sample_category(x):
                         x = np.multiply( x, np.array(level_probs.values()) )
-                        y =  np.random.choice(a=cats, size=1, p=x/np.sum(x))[0] #np.random.choice(a=cats, size=1, p=x/np.sum(x))
+                        y =  np.random.choice(a=cats, size=1, p=x/np.sum(x))[0] 
+                        #np.random.choice(a=cats, size=1, p=x/np.sum(x))
                         return y;
                         
-                    vsample_category = np.vectorize(sample_category, otypes=[pd.Categorical]) # NEW!!!
+                    vsample_category = np.vectorize(sample_category, 
+                                                    otypes=[pd.Categorical])
                         
                     cats_unif = U[cat_cols]
                     
                     
-                    #cats_sampled = pd.Categorical(cats_unif.apply(sample_category, axis=1))# OLD!!!
+                    #cats_sampled = pd.Categorical(
+                    #   cats_unif.apply(sample_category, axis=1))# OLD!!!
                     cats_unif_arr = np.array(cats_unif) # NEW!!!
                     cats_sampled = vsample_category(cats_unif_arr) # NEW!!!
                     
@@ -582,31 +604,36 @@ class MixedDataModel:
              
         for key in nsamples_modes.keys():
             mean = np.repeat(0,self.cor[key].shape[0])
-            T = pd.DataFrame( np.random.multivariate_normal( mean = mean, 
-                                                             cov  = self.cor[key], 
-                                                             size = nsamples_modes[key]) )
+            T = pd.DataFrame( np.random.multivariate_normal( 
+                                mean = mean, 
+                                cov  = self.cor[key], 
+                                size = nsamples_modes[key]) )
             U = pd.DataFrame( norm.cdf(T) )
             U.columns = self.dum_cols
             
             gen_samples_mode_num = pd.DataFrame( np.nan, 
                                         index   = range(nsamples_modes[key]), 
-                                        columns = [] ) #range(self.cor[i].shape[0]) )
+                                        columns = [] ) 
             gen_samples_mode = pd.DataFrame( np.nan, 
                                         index   = range(nsamples_modes[key]), 
-                                        columns = [] ) #range(self.cor[i].shape[0]) )
+                                        columns = [] ) 
             
             print 'generate histogram samples...'
             if method == 'histogram':
-                hist_samples = gen_hist_samples(self.hists[key], n_samples_hist = np.sum(nsamples_modes.values()), seed=seed)
+                hist_samples = gen_hist_samples(self.hists[key], 
+                    n_samples_hist = np.sum(nsamples_modes.values()), 
+                                           seed=seed)
                 for key2 in self.hists[key].keys() :
-                    gen_samples_mode_num[key2] = np.percentile(a=hist_samples[key2], q=100*U[key2])
+                    gen_samples_mode_num[key2] = np.percentile(
+                            a=hist_samples[key2], q=100*U[key2])
                     
             if method == 'smooth':
                 """
                 for j in range(len(self.hists[i])):
                     Percentile = SmoothPercentile(self.hists[i][j])
-                    print repr(min(U[j])) + ' ' + repr(max(U[j])) ### TESTING ONLY !!!!
-                    print repr( Percentile( 100* min(U[j])) ) + ' ' + repr( Percentile( 100* max(U[j])) ) ### TESTING ONLY !!!!
+                    print repr(min(U[j])) + ' ' + repr(max(U[j]))
+                    print repr( Percentile( 100* min(U[j])) ) + ' ' 
+                                + repr( Percentile( 100* max(U[j])) )
                     gen_samples_mode[j] = Percentile( 100*U[j] )
                 """
             
@@ -621,7 +648,8 @@ class MixedDataModel:
                     
                     def sample_category(x):
                         x = np.multiply( x, np.array(level_probs.values()) )
-                        y =  np.random.choice(a=cats, size=1, p=x/np.sum(x))[0] #np.random.choice(a=cats, size=1, p=x/np.sum(x))
+                        y =  np.random.choice(a=cats, size=1, p=x/np.sum(x))[0] 
+                             #np.random.choice(a=cats, size=1, p=x/np.sum(x))
                         return y;
                         
 
@@ -629,8 +657,10 @@ class MixedDataModel:
                         
                     cats_unif = U[cat_cols]
                     #cats_unif_arr = np.array(cats_unif) # NEW!!!
-                    cats_sampled = pd.Categorical(cats_unif.apply(sample_category, axis=1)) # OLD!!!
-                    #cats_sampled = pd.Categorical( vsample_category(cats_unif.as_matrix()) )
+                    cats_sampled = pd.Categorical(
+                                    cats_unif.apply(sample_category, axis=1)) 
+                    #cats_sampled = pd.Categorical( 
+                    #   vsample_category(cats_unif.as_matrix()) )
                     #print repr(cats_sampled)
                     
                     gen_samples_mode[col] = cats_sampled
@@ -708,7 +738,8 @@ class MixedDataModel:
                                    nsamples_modes_test,
                                    method='histogram', seed=1)
         
-        label_test = np.array( [int(label in anom_modes) for label in label_test] )
+        label_test = np.array( [ int(label in anom_modes) 
+                                 for label in label_test] )
         
         return train, test, label_test;
         
@@ -763,7 +794,8 @@ def generateNoveltyData( dataset,
         FCT = FCT_import.copy()
         del FCT[label]
         
-        fac_cols = ast.literal_eval(config_data['Forest Cover Type']['fac_cols'])
+        fac_cols = ast.literal_eval(
+                config_data['Forest Cover Type']['fac_cols'])
         for col in fac_cols:
             FCT[col] = pd.Categorical(FCT[col])
         
@@ -798,7 +830,8 @@ def generateNoveltyData( dataset,
         CCF = CCF_import.copy()
         del CCF[label]
         
-        fac_cols = ast.literal_eval(config_data['Credit Card Fraud']['fac_cols'])
+        fac_cols = ast.literal_eval(
+                config_data['Credit Card Fraud']['fac_cols'])
         for col in fac_cols:
             CCF[col] = pd.Categorical(CCF[col])
         
@@ -868,7 +901,8 @@ np.max(abs(cor_diff))
 np.mean(np.array(cor_diff))
 
 ### Anomaly samples
-bla, bla2 = iris_model.generateDataModes( {'a':1000}, method='histogram', seed=1)
+bla, bla2 = iris_model.generateDataModes( {'a':1000}, 
+                                          method='histogram', seed=1)
 axes = pd.tools.plotting.scatter_matrix(bla, alpha=0.2, figsize=(10, 10))
 
 tra,te,lab_te, = iris_model.generateNoveltyAnomalyData(
@@ -897,7 +931,8 @@ modes = pd.Categorical( boston[label_col] )
 ### fit data model
 boston_model = MixedDataModel( boston, modes=None, 
                                nbins=50, smooth_hists=True, bw=0.5 )
-boston_syn, modes_boston = boston_model.generateData( nsamples=506, method = 'histogram' )
+boston_syn, modes_boston = boston_model.generateData( nsamples=506, 
+                                                      method = 'histogram' )
     
 ### plot data
 axes = pd.tools.plotting.scatter_matrix(boston, alpha=0.2, figsize=(10, 10))
@@ -910,7 +945,8 @@ print pd.Categorical( boston['RAD'] ).describe()
 print pd.Categorical( boston_syn['RAD'] ).describe()
 
 ### check difference of correlation matrices
-cor_diff = boston_model.cor[0] - np.corrcoef( pd.get_dummies(boston_syn), rowvar=0 )
+cor_diff = boston_model.cor[0] - np.corrcoef( pd.get_dummies(boston_syn), 
+                                              rowvar=0 )
 np.max(abs(cor_diff))
 np.mean(np.array(cor_diff))
 
@@ -923,8 +959,10 @@ cor_real_0 = pd.DataFrame(np.corrcoef(CCF[modes=='Class0'], rowvar=0))
 np.max(np.max(cor_syn_0-cor_real_0))
 np.mean(np.mean(cor_syn_0-cor_real_0))
 
-axes = pd.tools.plotting.scatter_matrix(train.iloc[1:1000,1:10], alpha=0.2, figsize=(10, 10))
-axes = pd.tools.plotting.scatter_matrix(CCF.iloc[1:1000,1:10], alpha=0.2, figsize=(10, 10))
+axes = pd.tools.plotting.scatter_matrix(train.iloc[1:1000,1:10], alpha=0.2, 
+                                        figsize=(10, 10))
+axes = pd.tools.plotting.scatter_matrix(CCF.iloc[1:1000,1:10], alpha=0.2, 
+                                        figsize=(10, 10))
 
 plt.hist(train.iloc[:,2], 100)
 plt.hist(CCF.iloc[:,2], 100)
