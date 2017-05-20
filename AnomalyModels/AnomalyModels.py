@@ -850,89 +850,6 @@ class KMD_AnomalyModel(AnomalyModel):
 
         #return scores_list;
         
-    """
-    def get_performance(self, test, label_test, print_rd_scores=-1):
-         
-        start_time = time.time() # start clock
-        
-        if self.verbose != 1:
-            h2o.no_progress()
-        
-        if self.verbose == 1:
-            print '\n=== TEST: k-means distance anomaly score ==='
-        
-            ### define function
-        def RMS(x):
-            p = -2
-            # score = (x^p)^(1/p)
-            score = np.sum(x**p)**(1/p)
-            return score;
-        
-        
-        ### get anomaly scores and AUC score
-        scores = self.get_anomaly_scores( test )
-        
-        ### print random sample of scores if enabled
-        if self.verbose == 1:
-            if print_rd_scores > 0:
-                print ( 'Random sample of ' + repr(print_rd_scores) +
-                        ' anomaly scores\n' +
-                        repr(sample(scores[0], print_rd_scores)) + '\n' +
-                        'Summary of anomaly scores of test set:\n' +
-                        repr(pd.DataFrame(scores).describe()) + '\n'   )
-            
-        
-        time_elapsed = round(time.time() - start_time, 1) # stop clock
-            
-        ### print AUC score
-        if self.verbose == 1:
-            print ( '> RESULT: (time elapsed: ' 
-                    + repr(time_elapsed) + 's)\n')
-        
-        if self.verbose == 1:
-            print 'Scores of individual clusterings:'
-            for i in range(scores.shape[1]):
-                auc_score = roc_auc_score( label_test, scores.loc[:,i] )
-                print 'Model ' + repr(i) + ': ' + repr(auc_score)
-        
-        ### print AUC scores of combined model scores
-        if self.verbose == 1:
-            print '\nScores of combined models:'
-            
-        if self.verbose == 1:
-            min_scores = scores.apply(min, axis=1)
-            min_auc_score = roc_auc_score( label_test, min_scores )
-            print 'min-score:    ' + repr(min_auc_score)
-            
-        if self.verbose == 1:
-            max_scores = scores.apply(max, axis=1)
-            max_auc_score = roc_auc_score( label_test, max_scores )
-            print 'max-score:    ' + repr(max_auc_score)
-            
-        mean_scores = scores.apply(np.mean, axis=1)
-        mean_auc_score = roc_auc_score( label_test, mean_scores )
-        if self.verbose == 1:
-            print 'mean-score:   ' + repr(mean_auc_score)
-            
-        if self.verbose == 1:
-            median_scores = scores.apply(np.median, axis=1)
-            median_auc_score = roc_auc_score( label_test, median_scores )
-            print 'median-score: ' + repr(median_auc_score)
-            
-        if self.verbose == 1:
-            rms_scores = scores.apply( RMS, axis=1 )
-            rms_auc_score = roc_auc_score( label_test, rms_scores )
-            print 'RMS-score:    ' + repr(rms_auc_score)
-            
-        if self.verbose == 1:
-            print '======================================================\n'
-    
-        if self.verbose != 1:
-            h2o.show_progress()    
-        
-        self.performance = mean_auc_score
-        return self.performance;
-    """
 ###############################################################################
 
 
@@ -1151,89 +1068,6 @@ class KMC_AnomalyModel(AnomalyModel):
         
         #return scores_list;
         
-    """
-    def get_performance(self, test, label_test, print_rd_scores=-1):
-         
-        start_time = time.time() # start clock
-        
-        if self.verbose != 1:
-            h2o.no_progress()
-        
-        if self.verbose == 1:
-            print '\n=== TEST: k-means distance anomaly score ==='
-        
-            ### define function
-        def RMS(x):
-            p = -2
-            # score = (x^p)^(1/p)
-            score = np.sum(x**p)**(1/p)
-            return score;
-        
-        
-        ### get anomaly scores and AUC score
-        scores = self.get_anomaly_scores( test )
-        
-        ### print random sample of scores if enabled
-        if self.verbose == 1:
-            if print_rd_scores > 0:
-                print ( 'Random sample of ' + repr(print_rd_scores) +
-                        ' anomaly scores\n' +
-                        repr(sample(scores[0], print_rd_scores)) + '\n' +
-                        'Summary of anomaly scores of test set:\n' +
-                        repr(pd.DataFrame(scores).describe()) + '\n'   )
-            
-        
-        time_elapsed = round(time.time() - start_time, 1) # stop clock
-            
-        ### print AUC score
-        if self.verbose == 1:
-            print ( '> RESULT: (time elapsed: ' 
-                    + repr(time_elapsed) + 's)\n')
-        
-        if self.verbose == 1:
-            print 'Scores of individual clusterings:'
-            for i in range(scores.shape[1]):
-                auc_score = roc_auc_score( label_test, scores.loc[:,i] )
-                print 'Model ' + repr(i) + ': ' + repr(auc_score)
-        
-        ### print AUC scores of combined model scores
-        if self.verbose == 1:
-            print '\nScores of combined models:'
-            
-        if self.verbose == 1:
-            min_scores = scores.apply(min, axis=1)
-            min_auc_score = roc_auc_score( label_test, min_scores )
-            print 'min-score:    ' + repr(min_auc_score)
-            
-        if self.verbose == 1:
-            max_scores = scores.apply(max, axis=1)
-            max_auc_score = roc_auc_score( label_test, max_scores )
-            print 'max-score:    ' + repr(max_auc_score)
-            
-        mean_scores = scores.apply(np.mean, axis=1)
-        mean_auc_score = roc_auc_score( label_test, mean_scores )
-        if self.verbose == 1:
-            print 'mean-score:   ' + repr(mean_auc_score)
-            
-        if self.verbose == 1:
-            median_scores = scores.apply(np.median, axis=1)
-            median_auc_score = roc_auc_score( label_test, median_scores )
-            print 'median-score: ' + repr(median_auc_score)
-            
-        if self.verbose == 1:
-            rms_scores = scores.apply( RMS, axis=1 )
-            rms_auc_score = roc_auc_score( label_test, rms_scores )
-            print 'RMS-score:    ' + repr(rms_auc_score)
-            
-        if self.verbose == 1:
-            print '======================================================\n'
-    
-        if self.verbose != 1:
-            h2o.show_progress()    
-        
-        self.performance = mean_auc_score
-        return self.performance;
-    """
 ###############################################################################
 
 
@@ -1850,40 +1684,7 @@ class FRaC_AnomalyModel(AnomalyModel):
 
         return np.array(scores);
         #return scores_list;        
-    """
-    def get_performance(self, test, label_test, print_rd_scores=-1):
-         
-        start_time = time.time() # start clock
-        
-        print '\n=== TEST: FRaC anomaly score ==='
-        
-        ### get anomaly scores and AUC score
-        surprisals = self.get_anomaly_scores( test )
-        
-        for col in surprisals:
-            print col + ': ' + repr(roc_auc_score(label_test, surprisals[col]))
-        
-        scores = surprisals.apply(np.mean, axis=1)
-        self.performance = roc_auc_score(label_test, scores)
-        
-        ### print random sample of scores if enabled
-        if print_rd_scores > 0:
-            print ( 'Random sample of ' + repr(print_rd_scores) +
-                    ' anomaly scores\n' +
-                    repr(sample(scores, print_rd_scores)) + '\n' +
-                    'Summary of anomaly scores of test set:\n' +
-                    repr(pd.DataFrame(scores).describe()) + '\n'   )
-            
-        
-        time_elapsed = round(time.time() - start_time, 1) # stop clock
-            
-        ### print AUC score
-        print ( '> RESULT: (time elapsed: ' 
-                + repr(time_elapsed) + 's)\n' +
-                '     AUC: ' + repr(self.performance) + '\n' +
-                '======================================================\n' )
-        return self.performance;
-    """
+
 ###############################################################################
 
 
@@ -1967,7 +1768,7 @@ class PCA_AnomalyModel(AnomalyModel):
         AnomalyModel.__init__( self, 
                                ID           = 'PCA',
                                model_type   = 'PCA model',
-                               model_pars   = [ 'decay_rate',
+                               model_pars   = [ 'factor',
                                                 'seed' ],
                                mode         = mode,
                                verbose      = verbose,
@@ -2025,7 +1826,8 @@ class PCA_AnomalyModel(AnomalyModel):
         
         #train_dummy = train_dummy.drop(self.cols_dropped, axis=1)
         
-        self.n_components = train_dummy.shape[1]-1
+        dim_org = float(train_dummy.shape[1]-1)
+        self.n_components = math.ceil(self.factor * dim_org)
         self.model = decomposition.PCA( n_components = self.n_components,
                                         random_state = self.seed )
         self.model.fit(train_dummy)
