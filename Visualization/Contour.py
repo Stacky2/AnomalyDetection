@@ -3,10 +3,13 @@
 Created on Thu Feb 16 16:06:47 2017
 
 @author: Mathias
+
+This file contains the function "plot_2D_contour" which is used to create
+a two dimensional countour plot of the anomaly detection methods, showing the
+regions of different anomaly score sizes.
 """
 
-
-
+### import modules
 import sys
 import os 
 from numpy import random
@@ -15,11 +18,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 ### define directories
-Visualization_dir           = os.path.dirname(__file__)
-home_dir                    = os.path.normpath(Visualization_dir 
-                                           + os.sep + os.pardir)
-data_dir                    = os.path.join(home_dir, "data")
-AnomalyModels_dir           = os.path.join(home_dir, "AnomalyModels")
+Visualization_dir   = os.path.dirname(__file__)
+home_dir            = os.path.normpath(Visualization_dir 
+                                       + os.sep + os.pardir)
+data_dir            = os.path.join(home_dir, "data")
+AnomalyModels_dir   = os.path.join(home_dir, "AnomalyModels")
 
 ### import own modules
 ## import the AnomalyModel classes
@@ -30,8 +33,6 @@ from AnomalyModels import ( IF_AnomalyModel,   URF_AnomalyModel,
                             DAE_AnomalyModel,  OSVM_AnomalyModel,
                             LSAD_AnomalyModel, FRaC_AnomalyModel,
                             GMM_AnomalyModel,  PCA_AnomalyModel )
-
-
 
 ### plottingfunction    
 def plot_2D_AM_contour(X, model, grid_size=100, nlevels=15, cdf_score=True, 
@@ -93,6 +94,8 @@ def plot_2D_AM_contour(X, model, grid_size=100, nlevels=15, cdf_score=True,
     
     
 """
+### FOR TESTING PURPOSES ONLY!
+
 ### generation of dataset
 size = 1000
 
@@ -105,11 +108,10 @@ cov2 = [[1,-0.95],[-0.95,1]]
 size2=size
 
 random.seed(1)
-X = pd.concat( [ pd.DataFrame(random.multivariate_normal(mean1,cov1,size=size1)),
-               pd.DataFrame(random.multivariate_normal(mean2,cov2,size=size2))  ] )
+X = pd.concat( 
+        [ pd.DataFrame(random.multivariate_normal(mean1,cov1,size=size1)),
+          pd.DataFrame(random.multivariate_normal(mean2,cov2,size=size2))  ] )
 X.columns = ['x','y']
-
-
 
 model = PCA_AnomalyModel(mode='Novelty')
 plot_2D_AM_contour(X,model,grid_size=100)
