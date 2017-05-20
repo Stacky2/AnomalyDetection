@@ -46,14 +46,13 @@ from sklearn.model_selection import cross_val_predict
 from sklearn.model_selection import cross_val_score
 from sklearn.utils import shuffle
 from sklearn import decomposition
+from sklearn import svm
+from sklearn import mixture
 from h2o.estimators.deeplearning import H2OAutoEncoderEstimator
 from h2o.estimators.kmeans import H2OKMeansEstimator
 from random import sample
-# from random import shuffle
 from math import ceil
 from bayes_opt import BayesianOptimization
-from sklearn import svm
-from sklearn import mixture
 
 
 ### define max_mem_size allwoed for h2o (in GB, choose none for laptop)
@@ -121,7 +120,7 @@ class AnomalyModel:
         self.seed               = seed
         self.verbose            = verbose       # verbosity of output       
         
-        self.enable_cdf_score   = False #############################################################################################################################
+        self.enable_cdf_score   = False #######################################
 
         self.performance        = None
         self.fit_time           = None          # elapsed time for fit
@@ -147,10 +146,10 @@ class AnomalyModel:
 
     def model_fit_finished(self, start_time, train):
         """Print end of anomaly model fitting process and save elapsed time."""
-        ##############################################################################################################
+        #######################################################################
         if self.enable_cdf_score is True:
             self.train_scores = self.get_anomaly_scores(train, train_mode=True)
-        ##############################################################################################################    
+        #######################################################################
         
         time_elapsed = round(time.time() - start_time, 1)
         self.fit_time = time_elapsed
@@ -200,11 +199,13 @@ class AnomalyModel:
         scores = self.compute_anomaly_scores(data)
         
         
-        ######################################################################################################
-        if (self.enable_cdf_score is True) & (train_mode is False) & (cdf_score is True):
+        #######################################################################
+        if ( (self.enable_cdf_score is True) 
+              & (train_mode is False) 
+              & (cdf_score is True) ):
             for i in range(len(scores)):
                 scores[i] = np.mean(self.train_scores <= scores[i])
-        ######################################################################################################
+        #######################################################################
 
         ### Print that score calculation finished and time elapsed
         self.score_computation_finished(start_time)
@@ -334,11 +335,6 @@ class IF_AnomalyModel(AnomalyModel):
         :parm verbose:
             'verbose' is either 0 or 1 and specifies if the algorithm should
             give console output or not.
-            
-            
-        [   Returns [CHANGE!!!]
-            -------
-            :return: [arg returned], [Description of [arg returned]].   ]
         """
         
         AnomalyModel.__init__( self, 
@@ -403,7 +399,18 @@ class IF_AnomalyModel(AnomalyModel):
         
         
     def compute_anomaly_scores(self, data):
-        """A function that computes concrete anomaly scores."""
+        """A function that computes concrete anomaly scores.
+        
+        Parameters:
+        -----------
+        :param data:
+            'data' is a Dataframe of the same form as the 'train' Dataframe
+            used in the 'fit' function.
+            
+        Returns:
+        --------
+        :return: 'scores', list of anomaly scores computed for the dataset
+        'data'."""
         # (revert scores (because output -1 means anomalous and 1 normal) 
         # and convert scores in [-1,1] to scores in [0,1])
         data_num = lexical_enc_set(data)
@@ -419,26 +426,22 @@ class IF_AnomalyModel(AnomalyModel):
 ###############################################################################
 
 class URF_AnomalyModel(AnomalyModel):
-    """DESCRIPTION"""
     
     def __init__( self, 
                   mode                  = None,
                   n_estimators          = None, 
                   min_impurity_split    = None, 
-                  #shuffeling            = None, 
                   frac                  = None,
                   enable_train_score    = None, 
                   ncores                = None, 
                   seed                  = None,
                   verbose               = None  ):
-        """DESCRIPTION"""
         
         AnomalyModel.__init__( self, 
                                ID           = 'URF',
                                model_type   = 'Unsupervised Random Forest',
                                model_pars   = [ 'n_estimators', 
                                                 'min_impurity_split',
-                                                #'shuffeling',
                                                 'frac',
                                                 'seed' ],
                                mode         = mode,
@@ -449,7 +452,6 @@ class URF_AnomalyModel(AnomalyModel):
 
         self.n_estimators       = n_estimators
         self.min_impurity_split = min_impurity_split
-        #self.shuffeling         = shuffeling 
         self.frac               = frac
              
         
@@ -463,8 +465,6 @@ class URF_AnomalyModel(AnomalyModel):
 
 
     def fit(self, train):
-        """ DESCRIPTION """
-
         ### start clock    
         start_time = time.time() 
         
@@ -484,15 +484,6 @@ class URF_AnomalyModel(AnomalyModel):
         ### permuting each column
         train_num = lexical_enc_set(train)
         
-        #if ( self.shuffeling=='complete' ):
-        #    if self.verbose == 1:
-        #        print "  Create completely shuffeled anomaly dataset" 
-        #        
-        #    train_syn = train_num.copy()
-        #    for i in range( train_syn.shape[1] ):
-        #        train_syn.ix[:,i] = shuffle( train_syn.ix[:,i] ).values
-                
-        #elif ( self.shuffeling=='partial' ):
         if self.verbose == 1:
             print "  Create partially shuffeled anomaly dataset" 
                 
@@ -526,18 +517,17 @@ class URF_AnomalyModel(AnomalyModel):
 ###############################################################################
 
 class UXGB_AnomalyModel(AnomalyModel):
+    
     def __init__( self,
                   mode                  = None,
                   nrounds               = None, 
                   max_depth             = None, 
                   num_parallel_tree     = None, 
-                  #shuffeling            = None, 
                   frac                  = None, 
                   enable_train_score    = None,
                   ncores                = None, 
                   seed                  = None,
                   verbose               = None  ):
-        """DESCRIPTION"""
         
         AnomalyModel.__init__( self, 
                                ID           = 'UXGB',
@@ -545,7 +535,6 @@ class UXGB_AnomalyModel(AnomalyModel):
                                model_pars   = [ 'nrounds',
                                                 'max_depth',
                                                 'num_parallel_tree',
-                                                #'shuffeling',
                                                 'frac',
                                                 'seed' ],
                                mode         = mode,
@@ -554,11 +543,10 @@ class UXGB_AnomalyModel(AnomalyModel):
                                seed         = seed )
         
 
-        self.nrounds = nrounds
-        self.max_depth = max_depth
-        self.num_parallel_tree = num_parallel_tree
-        #self.shuffeling = shuffeling
-        self.frac = frac     
+        self.nrounds            = nrounds
+        self.max_depth          = max_depth
+        self.num_parallel_tree  = num_parallel_tree
+        self.frac               = frac     
 
         
         if (self.mode != 'Novelty') & (self.mode != 'Outlier'):
@@ -594,15 +582,7 @@ class UXGB_AnomalyModel(AnomalyModel):
         ### generate synthetic set with removed structure by independently
         ### permuting each column
         train_num = lexical_enc_set(train)
-        """
-        if ( self.shuffeling=='complete' ):
-            if self.verbose == 1:
-                print "  Create completely shuffeled anomaly dataset..." 
-            train_syn = train_num.copy()
-            for i in range(train_syn.shape[1]):
-                train_syn.ix[:,i] = shuffle(train_syn.ix[:,i]).values
-        """
-        #elif ( self.shuffeling=='partial'):
+
         if self.verbose==1:
             print "  Create partially shuffeled anomaly dataset..." 
                 
@@ -625,7 +605,6 @@ class UXGB_AnomalyModel(AnomalyModel):
         
         
     def compute_anomaly_scores(self, data):
-
         data_num = lexical_enc_set(data)
         ddata = xgb.DMatrix( data_num )
         scores = self.model.predict( ddata )
@@ -640,6 +619,7 @@ class UXGB_AnomalyModel(AnomalyModel):
 ###############################################################################
 
 class KMD_AnomalyModel(AnomalyModel):
+    
     def __init__( self, 
                   mode              = None,
                   k                 = None,
@@ -666,7 +646,7 @@ class KMD_AnomalyModel(AnomalyModel):
                                ncores       = ncores,
                                seed         = seed )
         
-
+        
         self.k                  = k
         self.n                  = n
         self.max_iterations     = max_iterations                
@@ -744,13 +724,12 @@ class KMD_AnomalyModel(AnomalyModel):
                KMD_model.train(training_frame=subsample_H2O) # NEW!!
            else:
                cols_drop = sample(range(1, train.shape[1]+1), 
-                                  int(train.shape[1]*(1-self.colsample)) ) # NEW !!
-               KMD_model.train(training_frame=subsample_H2O.drop(cols_drop)) # NEW!!
+                                  int(train.shape[1]*(1-self.colsample)) ) 
+               KMD_model.train(training_frame=subsample_H2O.drop(cols_drop)) 
                
            
            self.dropped_cols.append(cols_drop)
            
-           # KMD_model.train(training_frame=subsample_H2O[0]) # NEW!!
            self.model.append(KMD_model)
 
            
@@ -768,7 +747,8 @@ class KMD_AnomalyModel(AnomalyModel):
             data_std = data.copy()
             for column in data:
                 if column in cat_cols: 
-                    data_std[column] = (data[column]-means[column]) / sds[column]
+                    data_std[column] = ( (data[column]-means[column]) 
+                                         / sds[column] )
                 
             return data_std;  
             
@@ -858,6 +838,7 @@ class KMD_AnomalyModel(AnomalyModel):
 ###############################################################################
 
 class KMC_AnomalyModel(AnomalyModel):
+    
     def __init__( self, 
                   mode              = None,
                   k                 = None,
@@ -962,13 +943,12 @@ class KMC_AnomalyModel(AnomalyModel):
                KMC_model.train(training_frame=subsample_H2O) # NEW!!
            else:
                cols_drop = sample(range(1, train.shape[1]+1), 
-                                  int(train.shape[1]*(1-self.colsample)) ) # NEW !!
-               KMC_model.train(training_frame=subsample_H2O.drop(cols_drop)) # NEW!!
+                                  int(train.shape[1]*(1-self.colsample)) ) 
+               KMC_model.train(training_frame=subsample_H2O.drop(cols_drop)) 
                
            
            self.dropped_cols.append(cols_drop)
            
-           # KMC_model.train(training_frame=subsample_H2O[0]) # NEW!!
            self.model.append(KMC_model)
 
            
@@ -986,7 +966,8 @@ class KMC_AnomalyModel(AnomalyModel):
             data_std = data.copy()
             for column in data:
                 if column in cat_cols: 
-                    data_std[column] = (data[column]-means[column]) / sds[column]
+                    data_std[column] = ( (data[column]-means[column]) 
+                                         / sds[column] )
                 
             return data_std;  
             
@@ -997,8 +978,8 @@ class KMC_AnomalyModel(AnomalyModel):
         data_H2O = h2o.H2OFrame( data )
         data_std = standardize(data, self.cat_cols, self.means, self.sds)
         scores_list = pd.DataFrame( np.nan, 
-                                   index   = range(data.shape[0]), 
-                                   columns = range(self.n)              )
+                                    index   = range(data.shape[0]), 
+                                    columns = range(self.n) )
         
         for i in range(self.n):
             ### predict cluster-membership
@@ -1064,7 +1045,6 @@ class KMC_AnomalyModel(AnomalyModel):
             scores_final = scores_list.apply(min, axis=1)
                 
         return np.array(scores_final);
-
         
         #return scores_list;
         
@@ -1076,6 +1056,7 @@ class KMC_AnomalyModel(AnomalyModel):
 ###############################################################################
 
 class AE_AnomalyModel(AnomalyModel):
+    
     def __init__( self,
                   mode                  = None,
                   hidden                = None,
@@ -1128,7 +1109,8 @@ class AE_AnomalyModel(AnomalyModel):
         
         self.print_fit_started()
         
-        h2o.init(nthreads=self.ncores, max_mem_size=max_mem_size) # initialize H2O cluster
+        # initialize H2O cluster
+        h2o.init(nthreads=self.ncores, max_mem_size=max_mem_size)
         train_h2o = h2o.H2OFrame(train) # save train as H2OFrame
 
         
@@ -1165,6 +1147,7 @@ class AE_AnomalyModel(AnomalyModel):
 ############################################################################### 
 
 class DAE_AnomalyModel(AnomalyModel):
+    
     def __init__( self,
                   mode                  = None,
                   hidden                = None,
@@ -1227,7 +1210,8 @@ class DAE_AnomalyModel(AnomalyModel):
 
         self.print_fit_started()
         
-        h2o.init(nthreads=self.ncores, max_mem_size=max_mem_size) # initialize H2O cluster
+        # initialize H2O cluster
+        h2o.init(nthreads=self.ncores, max_mem_size=max_mem_size)
         train_h2o = h2o.H2OFrame(train) # save train as H2OFrame
 
 
@@ -1264,7 +1248,8 @@ class DAE_AnomalyModel(AnomalyModel):
 
         data_h2o = h2o.H2OFrame(data)
         for i in range(len(self.hidden)-1):
-            data_h2o = self.model[i].deepfeatures(data_h2o, len(self.hidden[i])-1 )
+            data_h2o = self.model[i].deepfeatures(data_h2o, 
+                                                  len(self.hidden[i])-1 )
         
         AE_score_h2o = self.model[len(self.hidden)-1].anomaly( data_h2o )
         RecMSE = AE_score_h2o.as_data_frame()['Reconstruction.MSE']
@@ -1280,8 +1265,7 @@ class DAE_AnomalyModel(AnomalyModel):
 ###############################################################################
 
 class OSVM_AnomalyModel(AnomalyModel):
-    """DESCRIPTION"""
-    
+
     def __init__( self,
                   mode           = None,
                   nu             = None, 
@@ -1324,17 +1308,8 @@ class OSVM_AnomalyModel(AnomalyModel):
         
         if self.gamma <= 0:
             self.gamma = 'auto'
-        """
-        ### Initialization and Fit of Isolation Forest
-        self.model = svm.OneClassSVM( 
-                        kernel        = 'rbf', 
-                        nu            = self.nu,
-                        gamma         = 'auto', #self.gamma,
-                        random_state  = self.seed, 
-                        cache_size    = 1000,
-                        verbose       = self.verbose       )   
-        """
-        ### Initialization and Fit of Isolation Forest
+
+        ### Initialization and Fit of one-class SVM model
         self.model = svm.OneClassSVM( 
                         kernel        = 'rbf', 
                         nu            = self.nu,
@@ -1379,7 +1354,6 @@ class OSVM_AnomalyModel(AnomalyModel):
 ###############################################################################
 
 class LSAD_AnomalyModel(AnomalyModel):
-    """DESCRIPTION"""
     
     def __init__( self,
                   mode           = None,
@@ -1392,7 +1366,8 @@ class LSAD_AnomalyModel(AnomalyModel):
         
         AnomalyModel.__init__( self, 
                                ID           = 'LSAD',
-                               model_type   = 'Least Squares anomaly detection',
+                               model_type   = """Least Squares anomaly 
+                                              detection""",
                                model_pars   = [ 'sigma',
                                                 'rho',
                                                 'max_samples',
@@ -1421,7 +1396,9 @@ class LSAD_AnomalyModel(AnomalyModel):
         
         ### Initialization and Fit of Isolation Forest
         print self.max_samples
-        self.model = lsanomaly.LSAnomaly(rho=self.rho, sigma=self.sigma, n_kernels_max=self.max_samples) #sigma=3, rho=0.1)
+        self.model = lsanomaly.LSAnomaly(rho            = self.rho, 
+                                         sigma          = self.sigma, 
+                                         n_kernels_max  = self.max_samples) 
             
         ### Print information of model being fitted
         self.print_fit_started()
@@ -1462,7 +1439,8 @@ class FRaC_AnomalyModel(AnomalyModel):
         
         AnomalyModel.__init__( self, 
                                ID           = 'FRaC',
-                               model_type   = 'Feature Regression and Classification',
+                               model_type   = """Feature Regression and 
+                                              Classification""",
                                model_pars   = [ 'n_estimators',
                                                 'bw',
                                                 'seed' ],
@@ -1514,7 +1492,7 @@ class FRaC_AnomalyModel(AnomalyModel):
             model = RandomForestRegressor( 
                        n_estimators       = self.n_estimators,
                        min_impurity_split = 1e-7,
-                       #max_depth  = 15,
+                       #max_depth         = 15,
                        n_jobs             = self.ncores,
                        random_state       = self.seed,
                        verbose            = 0 )
@@ -1549,14 +1527,17 @@ class FRaC_AnomalyModel(AnomalyModel):
                 '     number of trees = ' + repr(self.n_estimators) + '\n')
         
         ### remove all features with too few variance (because disturbes algo)
-        self.cols_sel = list(train.columns[ lexical_enc_set(train).apply(np.var, axis=0) >= 1e-4 ])
+        self.cols_sel = list(train.columns[ 
+                lexical_enc_set(train).apply(np.var, axis=0) >= 1e-4 
+                ])
         print self.cols_sel
 
         ### remove all categorical features whith levels that have lass then 10
         ### members (in the training set), because RF can't deal with them
         for col in train:
             if ( train[col].dtype.name == 'category' ): 
-                if ( (min(train[col].value_counts())<10) & (col in self.cols_sel) ):
+                if ( (min(train[col].value_counts())<10) 
+                      & (col in self.cols_sel) ):
                     self.cols_sel.remove(col)
         
         for column in self.cols_sel:
@@ -1566,9 +1547,11 @@ class FRaC_AnomalyModel(AnomalyModel):
                 train_temp = drop_label_col_and_encode(train, column)
                 
                 model = fit_RFClassifier(train_temp, train[column])
-                pred_probs_table = cross_val_predict(model, train_temp, train[column], 
-                                              cv=5, method='predict_proba')
-                cv_probs = get_probs_from_table(pred_probs_table, train[column])
+                pred_probs_table = cross_val_predict( model, train_temp, 
+                                                      train[column], cv=5, 
+                                                      method='predict_proba' )
+                cv_probs = get_probs_from_table(pred_probs_table, 
+                                                train[column])
                                 
                 self.model[column]=model
                 self.entropy[column] = entropy(cv_probs)
@@ -1577,18 +1560,22 @@ class FRaC_AnomalyModel(AnomalyModel):
                 print 'Fit model for ' + column + ' (continuous)...'
                 
                 def GaussWeights(center, npoints, bw):
-                    weights = [np.exp( - ( pt - center  )**2 / bw ) for pt in range(1,(npoints+1)) ]
-                    normalized_weights = [wght/sum(weights) for wght in weights]
+                    weights = [ np.exp( - ( pt - center  )**2 / bw ) 
+                                for pt in range(1,(npoints+1)) ]
+                    normalized_weights = [ wght/sum(weights) 
+                                           for wght in weights]
                     return normalized_weights;
                     
                 def SmoothHistogram(counts, bw):
                     smoothed_counts = np.repeat(np.nan, len(counts))
                     for i in range(len(counts)):
-                        smoothed_counts[i] = sum(GaussWeights(i+1, len(counts), bw=bw) * counts)
+                        smoothed_counts[i] = sum(GaussWeights(i+1, 
+                                                 len(counts), bw=bw) * counts)
                     return (smoothed_counts/np.sum(smoothed_counts));
 
                 def get_hists(predicted, label, bw):
-                    hist = np.histogram( predicted - label, bins=int(np.sqrt(len(predicted)))) 
+                    hist = np.histogram( predicted - label, 
+                                         bins=int(np.sqrt(len(predicted))) ) 
                     counts = hist[0]
                     freqs = counts/float(np.sum(counts))
                     probs = np.concatenate([[0],freqs,[0]])
@@ -1609,7 +1596,8 @@ class FRaC_AnomalyModel(AnomalyModel):
                 predicted = cross_val_predict(model, train_temp, train[column], 
                                               cv=5)
 
-                hist, probs, sm_probs = get_hists(predicted, train[column], bw=self.bw)
+                hist, probs, sm_probs = get_hists(predicted, train[column], 
+                                                  bw=self.bw)
                 
                 diff = predicted-train[column]
                 cv_probs = get_prob_from_diff_and_hist(diff, hist, sm_probs)
@@ -1665,7 +1653,8 @@ class FRaC_AnomalyModel(AnomalyModel):
                 obs_probs = get_probs_from_table(probs_table, data[column])
 
                 eps = 1e-4
-                scores_list[column] = -np.log( np.maximum(obs_probs,eps) ) - self.entropy[column]
+                scores_list[column] = ( -np.log( np.maximum(obs_probs,eps) ) 
+                                        - self.entropy[column] )
                 
             else:
                 data_temp = drop_label_col_and_encode(data, column)
@@ -1678,7 +1667,8 @@ class FRaC_AnomalyModel(AnomalyModel):
                 obs_probs = get_prob_from_diff_and_hist(diff, hist, sm_probs)
                 
                 eps = 1e-4
-                scores_list[column] = -np.log( np.maximum(obs_probs,eps) ) - self.entropy[column]
+                scores_list[column] = ( -np.log( np.maximum(obs_probs,eps) ) 
+                                        -self.entropy[column] )
         
         scores = scores_list.apply(np.mean, axis=1)
 
@@ -1693,7 +1683,6 @@ class FRaC_AnomalyModel(AnomalyModel):
 ###############################################################################
 
 class GMM_AnomalyModel(AnomalyModel):
-    """DESCRIPTION"""
     
     def __init__( self,
                   mode           = None,
@@ -1732,7 +1721,9 @@ class GMM_AnomalyModel(AnomalyModel):
         self.print_fit_started()
         
         ### Initialization of GMM
-        n_components_save = max(1, min( int(train.shape[0]/10) , self.n_components) ) 
+        n_components_save = max(1, min( int(train.shape[0]/10) , 
+                                        self.n_components) 
+                                ) 
         print n_components_save
         self.model = mixture.GaussianMixture(n_components=n_components_save )
         
@@ -1756,7 +1747,6 @@ class GMM_AnomalyModel(AnomalyModel):
 ###############################################################################
 
 class PCA_AnomalyModel(AnomalyModel):
-    """DESCRIPTION"""
     
     def __init__( self,
                   mode           = None,
@@ -1821,11 +1811,6 @@ class PCA_AnomalyModel(AnomalyModel):
         self.means, self.sds = get_mean_sd(train_dummy)
         train_dummy = standardize(train_dummy, self.means, self.sds)
         
-        #self.cols_dropped = list(train_dummy.columns[ train_dummy.apply(np.var, axis=0) < 1e-4 ])
-        #print self.cols_dropped
-        
-        #train_dummy = train_dummy.drop(self.cols_dropped, axis=1)
-        
         dim_org = float(train_dummy.shape[1]-1)
         self.n_components = math.ceil(self.factor * dim_org)
         self.model = decomposition.PCA( n_components = self.n_components,
@@ -1863,7 +1848,8 @@ class PCA_AnomalyModel(AnomalyModel):
             scores = -self.model.score_samples(data_dummy)
         except ValueError:
             scores = data_dummy.shape[0]*[0.5]
-            print "WARNING: PPCA model failed, thus 0.5 returned for every sample."
+            print ( "WARNING: PPCA model failed, " + 
+                    "thus 0.5 returned for every sample." )
         
         print scores
         return scores;
