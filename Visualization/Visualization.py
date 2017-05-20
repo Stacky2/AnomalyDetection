@@ -78,8 +78,8 @@ def grad_hex_colors(values, n =10000):
     values = np.array(values)
     bins = np.linspace(start=min(values), stop = max(values), num=n)
     
-    color_grad1 = linear_gradient(col_low,col_white, n = int((n/2.0)+1))['hex']
-    color_grad2 = linear_gradient(col_white,col_high, n = int((n/2.0)+1))['hex']
+    color_grad1 = linear_gradient(col_low, col_white, n=int((n/2.0)+1))['hex']
+    color_grad2 = linear_gradient(col_white, col_high, n=int((n/2.0)+1))['hex']
     color_grad = color_grad1 + color_grad2
     
     values_bined = list(np.digitize(values, bins, right=False))
@@ -92,10 +92,9 @@ def grad_hex_colors_inv(values, n =10000):
     values = np.array(values)
     bins = np.linspace(start=min(values), stop = max(values), num=n)
     
-    color_grad1 = linear_gradient(col_high,col_white, n = int((n/2.0)+1))['hex']
-    color_grad2 = linear_gradient(col_white,col_low, n = int((n/2.0)+1))['hex']
+    color_grad1 = linear_gradient(col_high, col_white, n=int((n/2.0)+1))['hex']
+    color_grad2 = linear_gradient(col_white, col_low, n=int((n/2.0)+1))['hex']
     color_grad = color_grad1 + color_grad2
-    #color_grad= linear_gradient(col_high,col_low, n =n+1)['hex'] # green:"#00ff00"
     
     values_bined = list(np.digitize(values, bins, right=False))
     colors= [color_grad[Bin] for Bin in values_bined ]
