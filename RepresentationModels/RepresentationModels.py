@@ -15,9 +15,9 @@ Representation Models:
     - Fast independent component model
     - Truncated singular value model
     - Entity Embedding model
-    
 """
 
+### import modules
 import os
 import h2o
 import time
@@ -37,14 +37,17 @@ from h2o.estimators.glrm import H2OGeneralizedLowRankEstimator
 from sklearn import decomposition
 from sklearn.manifold import Isomap
 
+
 ### define max_mem_size allwoed for h2o (in GB, choose none for laptop)
 max_mem_size = 16
+
 
 ### define directories
 RepModels_dir = os.path.dirname(__file__)
 home_dir            = os.path.normpath(RepModels_dir 
                                            + os.sep + os.pardir)
 AnomalyModels_dir   = os.path.join(home_dir, "AnomalyModels")
+
 
 ### import own modules
 ## import the AnomalyModel classes
@@ -177,9 +180,6 @@ class ID_RepModel(RepModel):
 ###############################################################################
 
 class AE_RepModel(RepModel):
-    """
-    DESCRIPTION
-    """
     
     def __init__( self,
                   hidden    = None, 
@@ -188,9 +188,7 @@ class AE_RepModel(RepModel):
                   ncores    = None, 
                   seed      = None,
                   verbose   = None ):
-        """
-        DESCRIPTION
-        """
+
         RepModel.__init__( self, 
                            ID = 'AE',
                            model_type = 'Autoencoder representation model', 
@@ -267,17 +265,12 @@ class AE_RepModel(RepModel):
 ###############################################################################
 
 class PCA_RepModel(RepModel):
-    """
-    DESCRIPTION
-    """
     
     def __init__( self,
                   n_components   = None, 
                   seed           = None, 
                   verbose        = None  ):
-        """
-        DESCRIPTION
-        """
+
         RepModel.__init__( self, 
                            ID = 'PCA',
                            model_type = ( 'Principal Component ' +
@@ -328,21 +321,16 @@ class PCA_RepModel(RepModel):
 
 
 ###############################################################################
-### FICA representation model ##################################################
+### FICA representation model #################################################
 ###############################################################################
 
 class FICA_RepModel(RepModel):
-    """
-    DESCRIPTION
-    """
     
     def __init__( self, 
                   n_components  = None, 
                   seed          = None, 
                   verbose       = None  ):
-        """
-        DESCRIPTION
-        """
+
         RepModel.__init__( self, 
                            ID = 'FICA',
                            model_type = ( 'Fast Independent Components ' +
@@ -391,13 +379,10 @@ class FICA_RepModel(RepModel):
 
 
 ###############################################################################
-### TSVD representation model ##################################################
+### TSVD representation model #################################################
 ###############################################################################
 
 class TSVD_RepModel(RepModel):
-    """
-    DESCRIPTION
-    """
     
     def __init__( self, 
                   n_components  = None, 
@@ -436,8 +421,9 @@ class TSVD_RepModel(RepModel):
         self.print_fit_started()
         
         # PCA, IncrementalPCA, TSVD, FastICA, MiniBatchSparsePCA
-        self.model = decomposition.TruncatedSVD( n_components=self.n_components , 
-                                       random_state=self.seed )
+        self.model = decomposition.TruncatedSVD( 
+                        n_components = self.n_components, 
+                        random_state = self.seed )
         
         self.model.fit(X=pd.get_dummies(train)) 
         
@@ -458,9 +444,6 @@ class TSVD_RepModel(RepModel):
 ###############################################################################
 
 class EE_RepModel(RepModel):
-    """
-    DESCRIPTION
-    """
     
     def __init__( self, 
                   factor       = None,
@@ -472,9 +455,7 @@ class EE_RepModel(RepModel):
                   ncores       = None, 
                   seed         = None,
                   verbose      = None  ):
-        """
-        DESCRIPTION
-        """
+
         RepModel.__init__( self, 
                            ID = 'EE',
                            model_type = ( 'Entity Embedding ' +
@@ -529,13 +510,15 @@ class EE_RepModel(RepModel):
         ### Combine real and synthetic datasets into one
         train_ref = pd.concat( [ train, train_syn] )
         train_ref.index = range(train_ref.shape[0])
-        label_ref = pd.DataFrame( np.hstack( [ np.repeat('normal',train.shape[0]), 
-                                 np.repeat('anomaly',train.shape[0]) ] ) )
+        label_ref = pd.DataFrame( 
+                        np.hstack( [ np.repeat('normal',train.shape[0]), 
+                                     np.repeat('anomaly',train.shape[0]) ] ) )
         label_ref.index = range(label_ref.shape[0])
         label_ref.columns = ['label']
         label_ref['label'] = pd.Categorical(label_ref['label'])
             
-        h2o.init(nthreads=6, max_mem_size=max_mem_size) # initialize H2O cluster
+        # initialize H2O cluster
+        h2o.init(nthreads=6, max_mem_size=max_mem_size)
         data_ref = pd.concat([label_ref,train_ref], axis=1)
         train_ref_h2o = h2o.H2OFrame( data_ref ) # save train as H2OFrame
         train_ref_h2o[0]=train_ref_h2o[0].asfactor()
@@ -562,76 +545,10 @@ class EE_RepModel(RepModel):
         
     def compute_representation(self, data):
         data_h2o = h2o.H2OFrame( data )
-        data_EE = self.model.deepfeatures(data_h2o, layer=self.rep_layer).as_data_frame()
+        data_EE = self.model.deepfeatures(
+                      data_h2o, layer=self.rep_layer).as_data_frame()
         return data_EE;
     
-###############################################################################
-
-
-###############################################################################
-### Sparse coding representation model ########################################
-###############################################################################
-"""
-class SC_RepModel(RepModel):
-    " ""
-    DESCRIPTION
-    " ""
-    
-    def __init__( self, 
-                  factor       = None,
-                  n_components = None,
-                  hidden       = None, 
-                  depth        = None,
-                  rep_layer    = None, 
-                  epochs       = None, 
-                  ncores       = None, 
-                  seed         = None,
-                  verbose      = None  ):
-        " ""
-        DESCRIPTION
-        " ""
-        RepModel.__init__( self, 
-                           ID = 'SC',
-                           model_type = ( 'Sparse coding ' +
-                                          'representation model' ), 
-                           model_pars = [ 'factor','n_components'] )
-    
-        self.factor         = factor
-        self.n_components   = n_components
-        self.ncores         = ncores
-        self.seed           = seed
-        self.verbose        = verbose
-        
-        set_pars_by_config(self, config_Rep)
-        
-        
-    def fit(self, train):
-        
-        ### Compute default n_components if not specified
-        n_num_cols, n_cat_cols, n_levels = get_dimensions(train)
-        dim_dummy = n_num_cols + np.sum(n_levels)
-    
-        if self.n_components is None:
-            self.n_components = int(self.factor*dim_dummy)
-        
-        self.n_features = self.n_components
-        
-        ### start clock
-        start_time = time.time()
-        
-########################################################################################################################
-        
-        ### ???
-        self.model = ???
-        
-        ### stop clock
-        self.model_fit_finished(start_time)
-        
-        
-    def compute_representation(self, data):
-        ???
-        return data_EE;
-"""
 ###############################################################################
 
 
