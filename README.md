@@ -1,4 +1,5 @@
 # Anomaly Detection Test Program
+Code of my master thesis "A Comparison of Mixed-Type Anomaly Detection Methods"
 
 What is it?
 -----------
