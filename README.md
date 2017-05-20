@@ -14,7 +14,8 @@ program.
 When starting the python file "GUI.py", a window opens up that can be used for performing tests. On can specify the different parameters of the test in the corresponding tabs. Clicking the "Run!"-button in the "Run" tab triggers the program to collect
 the information from the different tabs and to form a configuration file for the test. This file gets saved in the "configs"-folder and then the test is executed with the "execute\_job" function mentioned above.
 
-A rought overview over the dependencies of the files can be found in the document "dependencies.pdf".
+A more detailed description of the different components of the test program can be found in thesis itself (see "MasterThesis.pdf"),
+in Appendix A - "Implementation - Methods and Testing Program".
 
 
 Folders
