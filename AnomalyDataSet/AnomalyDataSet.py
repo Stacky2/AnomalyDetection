@@ -3,22 +3,32 @@
 Created on Mon Mar 06 11:39:11 2017
 
 @author: Mathias
-"""
-import ast
 
-import matplotlib.pyplot as plt
-from sklearn.manifold import TSNE
+This file contains the class definition and functions of the AnomalyDetaSet.
+The functions also allows to generate data splits for Anomaly Detection out of 
+the raw data, using the function "getAnomalySplit".
+"""
 
 import pandas as pd
 import numpy as np
 import random as rd
+import matplotlib.pyplot as plt
+import ast
 import os 
 import time
 import math
 
-home_dir            = os.path.normpath(os.path.dirname(__file__) 
-                                           + os.sep + os.pardir)
-data_dir            = os.path.join(home_dir, "data")
+from sklearn.manifold import TSNE
+
+### define directories
+home_dir = os.path.normpath(os.path.dirname(__file__) + os.sep + os.pardir)
+data_dir = os.path.join(home_dir, "data")
+
+
+
+###############################################################################
+### Anomaly Dataset Class #####################################################
+###############################################################################
 
 class AnomalyDataSet():
     """Anomaly dataset class"""
@@ -78,6 +88,7 @@ class AnomalyDataSet():
         #self.add_cat_noise()
         
     def add_noise(self):
+        """Adds noise features to the raw dataset."""
         ncols_org = self.data.shape[1] 
         ratio_cat = float(len(self.fac_cols))/ float(ncols_org)
                        
@@ -88,18 +99,27 @@ class AnomalyDataSet():
         self.add_cat_noise(ncols = ncols_cat)
         
     def add_gauss_noise(self, ncols):
+        """Adds a number of ncols gaussian noise features to the raw 
+        dataset."""
         np.random.seed(seed=self.seed)
-        noise_features = pd.DataFrame(data=np.random.normal(size=(self.data.shape[0], ncols)), 
-                  columns=['num_noise'+repr(i) for i in range(ncols)])
+        noise_features = pd.DataFrame(
+                data=np.random.normal(size=(self.data.shape[0], ncols)), 
+                columns=['num_noise'+repr(i) for i in range(ncols)] 
+                )
         self.data = pd.concat([self.data,noise_features], axis=1)
         if ncols > 1:
             print ( repr(ncols) 
             + " standard normal noise features added to original data." )
             
     def add_cat_noise(self, ncols):
+        """Adds a number o ncols categorical noise features to the raw 
+        dataset."""
         np.random.seed(seed=self.seed)
-        noise_features = pd.DataFrame(data=np.random.choice(['A','B','C'], size=(self.data.shape[0], ncols)), 
-                  columns=['cat_noise'+repr(i) for i in range(ncols)])
+        noise_features = pd.DataFrame(
+                data=np.random.choice(['A','B','C'], 
+                                      size=(self.data.shape[0], ncols)), 
+                columns=['cat_noise'+repr(i) for i in range(ncols)]
+                )
         for col in noise_features:
             noise_features[col] = pd.Categorical(noise_features[col])
             
@@ -118,9 +138,11 @@ class AnomalyDataSet():
         levels_label = np.unique(self.data[self.label_col])
         
         if self.values_norm==None:
-            self.values_norm = [val for val in levels_label if val not in self.values_anom]
+            self.values_norm = [val for val in levels_label 
+                                if val not in self.values_anom]
         if self.values_anom==None:
-            self.values_anom = [val for val in levels_label if val not in self.values_norm]
+            self.values_anom = [val for val in levels_label 
+                                if val not in self.values_norm]
         
         label = self.data[self.label_col]
         
@@ -135,16 +157,19 @@ class AnomalyDataSet():
         # s = 0
         for val in self.values_anom:
             indicator_anom = np.logical_or( indicator_anom,  (label == val) )
-            self.overview = self.overview + '   ' + val + ': ' + repr(np.sum(label==val)) + ' values\n'
+            self.overview = (self.overview + '   ' + val + ': ' 
+                             + repr(np.sum(label==val)) + ' values\n')
     
         (IDX_anom,) = np.where(indicator_anom.values)
         
         ### get indices of normal events
-        self.overview = self.overview + ('\nNumber of values for each normal level:\n')
+        self.overview = (self.overview 
+                         + '\nNumber of values for each normal level:\n')
         indicator_norm = label == ""
         for val in self.values_norm:
             indicator_norm = np.logical_or( indicator_norm,  (label == val) )
-            self.overview = self.overview + '   ' + val + ': ' + repr(np.sum(label==val)) + ' values\n'
+            self.overview = (self.overview + '   ' + val + ': ' 
+                             + repr(np.sum(label==val)) + ' values\n')
     
         (IDX_norm,) = np.where(indicator_norm.values)
     
@@ -160,7 +185,10 @@ class AnomalyDataSet():
     
         
     def plot(self, nsamples=100, perplexity=30.0, n_iter=1000, seed=1):
-        
+        """
+        Plots a t-SNE plot of the dataset with different colours indicating
+        normal and anomaly samples.
+        """
         start_time = time.time() # start clock
         
         ### select part of data and label 
@@ -168,21 +196,24 @@ class AnomalyDataSet():
         X_copy = self.data.copy()
         X_copy.drop(self.label_col, axis=1)
         X_copy.index = range(X_copy.shape[0])
-        IDX_sample = rd.sample( range(X_copy.shape[0]), k=min(nsamples,X_copy.shape[0]) )
+        IDX_sample = rd.sample( range(X_copy.shape[0]), 
+                                k=min(nsamples,X_copy.shape[0]) )
         Xsel = pd.get_dummies(X_copy.loc[IDX_sample,:])
         label = self.data.loc[:,self.label_col]
         label_sel = label[IDX_sample]
         label_values = np.unique(label)
         
         ### fit TSNE model
-        model = TSNE(n_components=2,  perplexity=perplexity, n_iter=n_iter, random_state=seed, verbose=1)
+        model = TSNE(n_components=2,  perplexity=perplexity, n_iter=n_iter, 
+                     random_state=seed, verbose=1)
         np.set_printoptions(suppress=True)
         X_TSNE = model.fit_transform( Xsel ) 
         
         ### plot TSNE with col as colour label
         plt.figure()
         plt.figure(figsize=(15, 10)) 
-        col_list = ['coral','steelblue','aquamarine','gold','yellowgreen','fuchsia','orchid'] # add more
+        col_list = ['coral','steelblue','aquamarine','gold',
+                    'yellowgreen','fuchsia','orchid'] # add more
         
         for i in range(len(label_values)):
             color = col_list[i]
@@ -197,7 +228,8 @@ class AnomalyDataSet():
         plt.ylabel('Dim 2')
         #plt.title('T-SNE on ' + repr(nsamples) + ' train samples')
         plt.legend(loc='best')
-        plt.savefig(os.path.join(os.path.join(data_dir,self.dataset), "TSNE.png"))
+        plt.savefig(os.path.join(os.path.join(data_dir,self.dataset),
+                                 "TSNE.png"))
         #plt.savefig('../data/'+self.dataset+'/TSNE.png')
         plt.show()
         
@@ -205,7 +237,7 @@ class AnomalyDataSet():
         print ('  model fit finished! (time elapsed: ' 
                 + repr(time_elapsed) + 's)\n')
             
-###############################################################################
+
 ### Create novelty dectection data split ######################################
 ###############################################################################
 
@@ -227,9 +259,11 @@ class AnomalyDataSet():
         ### complement in all label levels
         levels_label = np.unique(self.data[self.label_col])
         if self.values_norm==None:
-            self.values_norm = [val for val in levels_label if val not in self.values_anom]
+            self.values_norm = [val for val in levels_label 
+                                if val not in self.values_anom]
         if self.values_anom==None:
-            self.values_anom = [val for val in levels_label if val not in self.values_norm]
+            self.values_anom = [val for val in levels_label 
+                                if val not in self.values_norm]
             
         ### extract label column
         label = self.data[self.label_col]
@@ -252,8 +286,9 @@ class AnomalyDataSet():
         n_test_anom = int(self.n_test_samples - n_test_norm)
     
         if n_test_anom > len(IDX_anom):
-            raise Exception('[ERROR] Not enough anomaly samples in the dataset! [ERROR]' + '\n' +
-                            repr(n_test_anom) + '>' +  repr(len(IDX_anom)) )
+            raise Exception(
+               '[ERROR] Not enough anomaly samples in the dataset! [ERROR]' 
+                + '\n' + repr(n_test_anom) + '>' +  repr(len(IDX_anom)) )
             
         rd.seed(self.seed)
         rd.shuffle(IDX_norm) # shuffle to break any ordering
@@ -275,8 +310,10 @@ class AnomalyDataSet():
         
         ### define train set, test set and test label
         train = self.data.drop(self.label_col, 1).loc[IDX_train,:]
-        test = pd.concat( [ self.data.drop(self.label_col, 1).loc[IDX_test_norm,:],
-                            self.data.drop(self.label_col, 1).loc[IDX_test_anom,:] ]  )
+        test = pd.concat( 
+                [ self.data.drop(self.label_col, 1).loc[IDX_test_norm,:],
+                  self.data.drop(self.label_col, 1).loc[IDX_test_anom,:] ]  
+                )
         label_test = np.hstack( [ np.repeat(0, len(IDX_test_norm) ), 
                                   np.repeat(1, len(IDX_test_anom) ) ] )
         
@@ -297,7 +334,7 @@ class AnomalyDataSet():
 
 ###############################################################################
         
-###############################################################################
+
 ### Create outlier dectection data split ######################################
 ###############################################################################
 
@@ -372,13 +409,17 @@ class AnomalyDataSet():
         
         
         ### define train set, test set and test label
-        train = pd.concat( [ self.data.drop(self.label_col, 1).loc[IDX_train_norm,:],
-                             self.data.drop(self.label_col, 1).loc[IDX_train_anom,:] ]  )
+        train = pd.concat(
+                   [ self.data.drop(self.label_col, 1).loc[IDX_train_norm,:],
+                     self.data.drop(self.label_col, 1).loc[IDX_train_anom,:] ]  
+                   )
         label_train = np.hstack( [ np.repeat(0, len(IDX_train_norm) ), 
                                    np.repeat(1, len(IDX_train_anom) ) ] )
         
-        test = pd.concat( [ self.data.drop(self.label_col, 1).loc[IDX_test_norm,:],
-                            self.data.drop(self.label_col, 1).loc[IDX_test_anom,:] ]  )
+        test = pd.concat( 
+                  [ self.data.drop(self.label_col, 1).loc[IDX_test_norm,:],
+                    self.data.drop(self.label_col, 1).loc[IDX_test_anom,:] ]  
+                  )
         label_test = np.hstack( [ np.repeat(0, len(IDX_test_norm) ), 
                                   np.repeat(1, len(IDX_test_anom) ) ] )
         
@@ -395,14 +436,17 @@ class AnomalyDataSet():
             label_train = label_train[:self.n_train_samples_max]
         
         ### Print the result
-        ratio_train_obs = float(len(IDX_train_anom)) / float(len(IDX_train_norm))
-        ratio_test_obs = float(len(IDX_test_anom)) / float(len(IDX_test_norm))
+        ratio_train_obs = ( float(len(IDX_train_anom)) 
+                            / float(len(IDX_train_norm)) )
+        ratio_test_obs =  ( float(len(IDX_test_anom)) 
+                            / float(len(IDX_test_norm)) )
         time_elapsed = round( time.time() - start_time, 1 ) # stop clock
         
         print( '= Summary: Outlier Split: =\n' +
                '===========================\n' +
                '   train set: ' + repr(train.shape[0]) + '\n'
-               '   - norm: ' + repr(len(label_train)-np.sum(label_train)) + '\n' +
+               '   - norm: ' + repr(len(label_train)-np.sum(label_train)) 
+               + '\n' +
                '   - anom: ' + repr(np.sum(label_train)) + '\n' +
                '   (ratio: ' + repr(ratio_train_obs) 
                + ')\n\n' +
@@ -417,8 +461,8 @@ class AnomalyDataSet():
         
         return train, test, label_test;
 
-###############################################################################
-###############################################################################
+
+### Create data split #########################################################
 ###############################################################################
 
     def getAnomalySplit(self, print_overview=False):
@@ -427,22 +471,26 @@ class AnomalyDataSet():
         mode class variable."""
         
         if self.mode == "Novelty":
-            train, test, label_test = self.getNoveltySplit(print_overview = print_overview)
+            train, test, label_test = self.getNoveltySplit(
+                                       print_overview = print_overview )
             return train, test, label_test;
         elif self.mode == "Outlier":
-            train, test, label_test = self.getOutlierSplit(print_overview = print_overview)
+            train, test, label_test = self.getOutlierSplit(
+                                       print_overview = print_overview )
             return train, test, label_test;
         else:
             raise Exception( 'Please choose "mode" as one of "Novelty" or ' +
                              '"Outlier".')
-        
+
+###############################################################################
 ###############################################################################
 
-        
-        
+"""
+### For test purposes only!
 if __name__ == "__main__":
     model = AnomalyDataSet(dataset="Forest Cover Type", mode = "Novelty")
     model.set_params_by_config(config_data)
     model.load_data_from_folder(home_dir)
     model.get_overview()
     train, test, label_test = model.getAnomalySplit()
+"""
